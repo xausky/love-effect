@@ -130,7 +130,7 @@ const scene2Group = new THREE.Group();
 scene.add(scene2Group);
 
 // Photo Gallery
-const photoGallery = new PhotoGallery(scene, 100);
+const photoGallery = new PhotoGallery(scene, 200);
 photoGallery.addTo(scene2Group);
 
 // Hide Scene 2 initially or place it far away
@@ -267,7 +267,7 @@ const triggerTransition = () => {
         camera.updateProjectionMatrix();
         
         // Start morphing to Tunnel positions
-        photoGallery.morphTo('tunnel', 1.5);
+        photoGallery.morphTo('tunnel', 0);
         
         // Play BGM
         bgm.play().catch(() => {});
@@ -278,7 +278,7 @@ const triggerTransition = () => {
     
     // Instead of moving camera, we wait for morph to finish then start the tunnel loop
     tl.call(() => {
-        photoGallery.setTunnelMode(true, 5.0); // Speed reduced further to 5.0
+        photoGallery.setTunnelMode(true, 2.0); // Speed reduced further to 5.0
     }, null, "arrival-=0.5"); // Start shortly before morph ends
     
     // Dummy tween to keep timeline duration correct for easing if needed, 

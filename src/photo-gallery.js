@@ -2,16 +2,12 @@ import * as THREE from 'three';
 import gsap from 'gsap';
 
 export class PhotoGallery {
-    constructor(scene, count = 300) {
+    constructor(scene, count = 64) {
         this.scene = scene;
-        this.count = count; // Default count, might update after loading photos
+        this.count = count; // Fixed count, photos will be recycled if fewer available
         this.group = new THREE.Group();
         this.photos = []; 
         this.targets = {
-            sphere: [],
-            helix: [],
-            heart: [],
-            grid: [],
             tunnel: []
         };
         
@@ -155,107 +151,13 @@ export class PhotoGallery {
     }
 
     calculateLayouts() {
-        // 1. Helix Layout
-        const helixRadius = 8;
-        const helixHeight = 30;
-        const helixTurns = 4;
-        
-        for (let i = 0; i < this.count; i++) {
-            const progress = i / this.count;
-            const angle = progress * helixTurns * Math.PI * 2;
-            const y = (progress - 0.5) * helixHeight;
-            const x = Math.cos(angle) * helixRadius;
-            const z = Math.sin(angle) * helixRadius;
-            
-            const dummy = new THREE.Object3D();
-            dummy.position.set(x, y, z);
-            dummy.lookAt(0, y, 0); // Look at axis
-            this.targets.helix.push({
-                position: dummy.position.clone(),
-                rotation: dummy.rotation.clone()
-            });
-        }
-
-        // 2. Sphere Layout
-        const sphereRadius = 12;
-        
-        for (let i = 0; i < this.count; i++) {
-            const phi = Math.acos(-1 + (2 * i) / this.count);
-            const theta = Math.sqrt(this.count * Math.PI) * phi;
-            
-            const x = sphereRadius * Math.cos(theta) * Math.sin(phi);
-            const y = sphereRadius * Math.sin(theta) * Math.sin(phi);
-            const z = sphereRadius * Math.cos(phi);
-            
-            const dummy = new THREE.Object3D();
-            dummy.position.set(x, y, z);
-            dummy.lookAt(0, 0, 0);
-            this.targets.sphere.push({
-                position: dummy.position.clone(),
-                rotation: dummy.rotation.clone()
-            });
-        }
-
-        // 3. Heart Layout (3D Point Cloud)
-        // Formula: (x^2 + 9/4y^2 + z^2 - 1)^3 - x^2z^3 - 9/80y^2z^3 = 0
-        // We use rejection sampling to find points inside/on surface
-        let heartPoints = [];
-        let attempts = 0;
-        
-        while (heartPoints.length < this.count && attempts < 50000) {
-            attempts++;
-            // Random point in box [-1.5, 1.5]
-            const x = (Math.random() - 0.5) * 3;
-            const y = (Math.random() - 0.5) * 3;
-            const z = (Math.random() - 0.5) * 3;
-            
-            // Apply scale to make it bigger
-            const scale = 10;
-            
-            // Check formula
-            const a = x * x + (9/4) * y * y + z * z - 1;
-            const val = a * a * a - x * x * z * z * z - (9/80) * y * y * z * z * z;
-            
-            // If val is close to 0 (surface) or < 0 (inside), we keep it
-            // Let's target the "volume" to fill it up
-            if (val <= 0) {
-                const dummy = new THREE.Object3D();
-                // Swap Y and Z to make it stand upright, and rotate 180 Y
-                // Formula usually gives a heart lying down or differently oriented depending on axes
-                // Let's adjust manual: x is width, y is depth, z is height in standard math Z-up
-                // ThreeJS is Y-up. 
-                // Let's try mapping: Math x -> Three x, Math z -> Three y, Math y -> Three z
-                // Also stretch it a bit
-                dummy.position.set(x * scale, z * scale, y * scale * 0.5); 
-                
-                dummy.lookAt(0, 0, 0); // Look at center
-                heartPoints.push({
-                    position: dummy.position.clone(),
-                    rotation: dummy.rotation.clone()
-                });
-            }
-        }
-        
-        // If we didn't get enough points (fallback), reuse sphere
-        if (heartPoints.length < this.count) {
-            console.warn("Heart generation failed, using sphere");
-            this.targets.heart = this.targets.sphere;
-        } else {
-            this.targets.heart = heartPoints;
-        }
-
-        // 4. Tunnel Layout
         const tunnelRadius = 6; 
-        const tunnelLength = 120; // Fixed length for 8-spiral
+        const tunnelLength = 120;
         this.tunnelLength = tunnelLength;
         
         // 8 Spiral Strands Layout
         const strands = 8;
         const photosPerStrand = Math.ceil(this.count / strands);
-        
-        // Helix parameters
-        const zStep = tunnelLength / photosPerStrand; 
-        const twistRate = 0.5; // How much angle changes per unit Z
         
         // If we want total strands to twist N times over length:
         // Angle = base + (z / length) * turns * 2PI
@@ -340,7 +242,7 @@ export class PhotoGallery {
                 x: target.position.x,
                 y: target.position.y,
                 z: target.position.z,
-                duration: duration + Math.random() * 0.5, 
+                duration: duration, 
                 ease: "power2.inOut",
                 onComplete: () => {
                     // Sync dynamicZ after morph if switching to tunnel
@@ -355,7 +257,7 @@ export class PhotoGallery {
                 x: target.rotation.x,
                 y: target.rotation.y,
                 z: target.rotation.z,
-                duration: duration + Math.random() * 0.5,
+                duration: duration,
                 ease: "power2.inOut"
             });
         });
@@ -378,6 +280,18 @@ export class PhotoGallery {
                 }
                 
                 photo.mesh.position.z = photo.dynamicZ;
+                
+                // Fade based on distance from camera
+                // Camera at z=-25, tunnel extends from 0 to -120 relative to scene2Group
+                // Convert to world space: add scene2Group.z = -20
+                const worldZ = photo.mesh.position.z - 20;
+                const distance = Math.abs(worldZ - (-25));
+                
+                // Fade from 0 opacity at far distance to 1 opacity at close distance
+                const fadeStart = 80;
+                const fadeEnd = 20;
+                let opacity = 1 - Math.max(0, Math.min(1, (distance - fadeEnd) / (fadeStart - fadeEnd)));
+                photo.mesh.material.opacity = opacity;
                 
                 // Recalculate rotation because looking at center line depends on Z?
                 // Actually in a straight tunnel, lookAt(0,0,z) orientation doesn't change if Z changes 
