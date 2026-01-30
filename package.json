@@ -1,39 +1,28 @@
 {
-  "name": "love-effect",
+  "name": "love.xausky.cn",
   "version": "1.0.0",
-  "description": "基于Three.js的粒子特效，采用GPU渲染。",
+  "description": "",
   "main": "index.js",
-  "directories": {
-    "lib": "lib"
-  },
   "scripts": {
-    "build": "webpack --mode=production",
-    "start": "webpack serve --mode=development"
+    "dev": "vite --host",
+    "build": "vite build",
+    "preview": "vite preview"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/youngdro/3DPoints.git"
+    "url": "git+https://github.com/xausky/love.xausky.cn.git"
   },
+  "keywords": [],
   "author": "",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/youngdro/3DPoints/issues"
+    "url": "https://github.com/xausky/love.xausky.cn/issues"
   },
-  "homepage": "https://github.com/youngdro/3DPoints#readme",
-  "devDependencies": {
-    "copy-webpack-plugin": "^10.2.1",
-    "css-loader": "^6.5.1",
-    "html-webpack-plugin": "^5.5.0",
-    "raw-loader": "^4.0.2",
-    "serve": "^13.0.2",
-    "style-loader": "^3.3.1",
-    "webpack": "^5.64.4",
-    "webpack-cli": "^4.9.1",
-    "webpack-dev-server": "^4.6.0"
-  },
+  "homepage": "https://github.com/xausky/love.xausky.cn#readme",
   "dependencies": {
-    "bezier-easing": "^2.1.0",
-    "stats.js": "^0.17.0",
-    "three": "^0.134.0"
+    "gsap": "^3.14.2",
+    "sharp": "^0.34.5",
+    "three": "^0.182.0",
+    "vite": "^7.3.1"
   }
 }

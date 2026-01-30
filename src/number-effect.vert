@@ -4,6 +4,7 @@ uniform int current;
 uniform float time;
 uniform float process;
 uniform float viewportHeight;
+uniform float uSize;
 varying float opacity;
 attribute vec3 p0;
 attribute vec3 p1;
@@ -53,6 +54,7 @@ void main() {
 	vec3 nextPosition = resolvePosition(next);
 	vec3 targetPosition = currentPosition * (1.0 - process) + nextPosition * process;
 	gl_Position = projectionMatrix * modelViewMatrix * vec4(targetPosition, 1.0);
-	gl_PointSize = viewportHeight * projectionMatrix[1][1] * (2.0 * sin(position.y + time * 3.14 * 2.0)) / gl_Position.w;
+	// Use uSize uniform instead of hardcoded factor
+	gl_PointSize = viewportHeight * projectionMatrix[1][1] * (uSize * sin(position.y + time * 3.14 * 2.0)) / gl_Position.w;
 	opacity = sin(targetPosition.x * 0.1 + targetPosition.y * 0.1 + time);
 }

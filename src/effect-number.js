@@ -1,8 +1,6 @@
 import * as THREE from 'three';
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
-import Effect from "./effect";
-import MainVert from "./number-effect.vert";
-import MainFrag from "./main.frag";
+import MainVert from "./number-effect.vert?raw";
+import MainFrag from "./main.frag?raw";
 
 
 export default class EffectNumber {
@@ -10,7 +8,7 @@ export default class EffectNumber {
         this.scene = scene;
     }
 
-    async load(x, y){
+    async load(x, y, scale = 1.0){
         const shaderMaterial = new THREE.ShaderMaterial({
             uniforms:{
                 time: {
@@ -35,7 +33,7 @@ export default class EffectNumber {
             depthTest: false,
             transparent: true
         });
-        const response = await fetch('/static/numbers.bin')
+        const response = await fetch('/numbers.bin')
         const buffer = await response.arrayBuffer()
         const array = new Float32Array(buffer)
         const bufferGeometry = new THREE.BufferGeometry();
@@ -47,8 +45,13 @@ export default class EffectNumber {
             bufferGeometry.setAttribute('p' + i, attribute);
         }
         this.object = new THREE.Points(bufferGeometry, shaderMaterial);
-        this.object.translateY(y)
-        this.object.translateX(x)
+        
+        // Apply transformations
+        this.object.scale.set(scale, scale, scale);
+        
+        // Center the object roughly if needed, but for now just trust the input position
+        this.object.position.set(x, y, 0);
+
         this.scene.add(this.object);
     }
 
